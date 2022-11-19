@@ -53,7 +53,7 @@ public class PlayerController : MonoBehaviour
         {
             if(!isJumping)
             {
-                //anim.SetInteger("Transition", 2);
+                anim.SetInteger("transition", 2);
             }
             transform.eulerAngles = new Vector3(0, 0, 0);
             right = true;
@@ -63,7 +63,7 @@ public class PlayerController : MonoBehaviour
         {
             if (!isJumping)
             {
-                //anim.SetInteger("Transition", 2);
+                anim.SetInteger("transition", 2);
             }
             transform.eulerAngles = new Vector3(0, 180, 0);
             left = true;
@@ -71,7 +71,7 @@ public class PlayerController : MonoBehaviour
         }
         if (movement == 0 && !isJumping && !isDashing)
         {
-            //anim.SetInteger("Transition", 0);
+            anim.SetInteger("transition", 1);
         }
     }
 
@@ -81,7 +81,7 @@ public class PlayerController : MonoBehaviour
         {
             if (!isJumping)
             {
-                //anim.SetInteger("Transition", 1);
+                anim.SetInteger("transition", 3);
                 rig.AddForce(new Vector2(0, jumpForce), ForceMode2D.Impulse);
                 isJumping = true;
             }
@@ -128,7 +128,11 @@ public class PlayerController : MonoBehaviour
     {
         if(collision.gameObject.layer == 3)
         {
-            isJumping= false;
+            if(isJumping)
+            {
+                anim.SetInteger("transition", 1);
+            }
+            isJumping = false;
         }
 
         if(collision.gameObject.layer == 9)
