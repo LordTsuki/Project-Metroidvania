@@ -10,16 +10,17 @@ public class PlayerController : MonoBehaviour
     public float speed;
     public float jumpForce;
     private float movement;
-    private float dashingPower = 24f;
-    private float dashingTime = 0.2f;
-    private float dashingCooldown = 1f;
+    public float dashingPower = 30f;
+    public float dashingTime = 0.2f;
+    public float dashingCooldown = 1f;
 
     [Header("Checks")]
-    private bool isJumping;
-    private bool isDashing;
-    private bool canDash = true;
     private bool right;
     private bool left;
+    //Controle do jogador respectivamente 'Movimento' 'Pulo' 'Permitido' 'Dash' 'Can Dash'
+#pragma warning disable IDE0044 // Add readonly modifier
+    private char[] control = {'M', 'F', 'O', 'S', 'T'};
+#pragma warning restore IDE0044 // Add readonly modifier
 
     [Header("Components")]
     [SerializeField] private Rigidbody2D rig;
@@ -35,7 +36,7 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
-        if(isDashing)
+        if (control[3] == 'D')
         {
             return;
         }
@@ -46,32 +47,66 @@ public class PlayerController : MonoBehaviour
 
     void Move()
     {
-        movement = Input.GetAxis("Horizontal");
-        rig.velocity = new Vector2(movement * speed, rig.velocity.y);
+        if (control[2] == 'O')
+        {
+            if (Input.GetKey(KeyCode.A) && !Input.GetKey(KeyCode.D))
+            {
+                control[0] = 'B';
+            }
 
-        if(movement > 0)
-        {
-            if(!isJumping)
+            if (Input.GetKey(KeyCode.D) && !Input.GetKey(KeyCode.A))
             {
-                anim.SetInteger("transition", 2);
+                control[0] = 'F';
             }
-            transform.eulerAngles = new Vector3(0, 0, 0);
-            right = true;
-            left = false;
-        }
-        if(movement < 0)
-        {
-            if (!isJumping)
+
+            if (Input.GetKey(KeyCode.D) && Input.GetKey(KeyCode.A) || !Input.GetKey(KeyCode.D) && !Input.GetKey(KeyCode.A))
             {
-                anim.SetInteger("transition", 2);
+                control[0] = 'M';
             }
-            transform.eulerAngles = new Vector3(0, 180, 0);
-            left = true;
-            right = false;
-        }
-        if (movement == 0 && !isJumping && !isDashing)
-        {
-            anim.SetInteger("transition", 1);
+
+            if (control[0] == 'M')
+            {
+                movement = 0;
+            }
+
+            if (control[0] == 'B')
+            {
+                movement = -1;
+            }
+
+            if (control[0] == 'F')
+            {
+                movement = 1;
+            }
+
+            rig.velocity = new Vector2(movement * speed, rig.velocity.y);
+
+            if (movement > 0)
+            {
+                if (control[1] == 'F')
+                {
+                    anim.SetInteger("transition", 2);
+                }
+                transform.eulerAngles = new Vector3(0, 0, 0);
+                right = true;
+                left = false;
+            }
+
+            if (movement < 0)
+            {
+                if (control[1] == 'F')
+                {
+                    anim.SetInteger("transition", 2);
+                }
+                transform.eulerAngles = new Vector3(0, 180, 0);
+                left = true;
+                right = false;
+            }
+
+            if (movement == 0 && control[1] == 'F' && control[3] == 'S')
+            {
+                anim.SetInteger("transition", 1);
+            }
         }
     }
 
@@ -79,18 +114,18 @@ public class PlayerController : MonoBehaviour
     {
         if(Input.GetKeyDown(KeyCode.Space))
         {
-            if (!isJumping)
+            if (control[1] == 'F')
             {
                 anim.SetInteger("transition", 3);
                 rig.AddForce(new Vector2(0, jumpForce), ForceMode2D.Impulse);
-                isJumping = true;
+                control[1] = 'J';
             }
         }
     }
 
     void DashStart()
     {
-        if(Input.GetKeyDown(KeyCode.LeftShift) && canDash)
+        if(Input.GetKeyDown(KeyCode.LeftShift) && control[4] == 'T')
         {
             //anim.SetInteger("Transition", x);
             StartCoroutine(Dash());
@@ -99,28 +134,31 @@ public class PlayerController : MonoBehaviour
 
     IEnumerator Dash()
     {
-        if (!isDashing)
+        if (control[3] == 'S')
         {
-            canDash = false;
-            isDashing = true;
+            control[4] = 'F';
+            control[3] = 'D';
             float originalGravity = rig.gravityScale;
             rig.gravityScale = 0f;
+
             if(right && !left)
             {
                 rig.velocity = new Vector2(transform.localScale.x * dashingPower, 0f);
                 tr.emitting = true;
             }
+
             if(left && !right)
             {
                 rig.velocity = new Vector2(transform.localScale.x * -dashingPower, 0f);
                 tr.emitting = true;
             }
+
             yield return new WaitForSeconds(dashingTime);
             tr.emitting = false;
             rig.gravityScale = originalGravity;
-            isDashing = false;
+            control[3] = 'S';
             yield return new WaitForSeconds(dashingCooldown);
-            canDash = true;
+            control[4] = 'T';
         }
     }
 
@@ -128,11 +166,7 @@ public class PlayerController : MonoBehaviour
     {
         if(collision.gameObject.layer == 3)
         {
-            if(isJumping)
-            {
-                anim.SetInteger("transition", 1);
-            }
-            isJumping = false;
+            control[1] = 'F';
         }
 
         if(collision.gameObject.layer == 9)
